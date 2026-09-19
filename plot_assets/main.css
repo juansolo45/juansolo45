@@ -4,9 +4,32 @@
     --toggle-height: 30px;
     --toggle-slider-margin: 2px;
     --toggle-slider-radius: 26px;
+
+    /* Every black/white/grey in the viewer goes through one of these, so the dark theme at the
+       bottom of this file is a single block of overrides rather than a second copy of the rules.
+       Hues (the blue/green/red/orange of the bullets and differentials) are NOT tokenised: they
+       are the chart's data and stay exactly as they are in both themes. */
+    --page-bg: #fff;       /* behind the svg, i.e. the chart's paper */
+    --plot-bg: #fff;       /* the axis margin blocks that mask scrolled-past content */
+    --plot-fg: #000;       /* axes, black bullets, black structure/differential lines, labels */
+    --panel-bg: #fff;
+    --panel-fg: #555;
+    --panel-border: #c6c6c6;
+    --panel-rule: #ebebeb;
+    --panel-hover: #eef3fb;
+    --panel-muted: #aaa;
+    --panel-span: #bcb1b3;
+    --panel-shadow: rgba(143, 144, 145, 1);
+    --menu-hover-bg: #3879d9;
+    --menu-hover-fg: #fff;
+    --note-bg: #f6f7f9;
+    --note-border: #d7dbe0;
+    --proof-reason: #2c5aa0;
+    --proof-caveat: #a06a2c;
 }
 
 body {
+    background: var(--page-bg);
     width: 100%;
     height: 100%;
     margin: 0;
@@ -34,7 +57,7 @@ svg {
     top: 5px;
     right: 5px;
     height: 30px;
-    background: #fff;
+    background: var(--panel-bg);
     padding: 3px;
     opacity: 0.9;
 }
@@ -53,21 +76,21 @@ svg {
 #div_menu {
     position: fixed;
     visibility: hidden;
-    background: #fff;
-    color: #555;
+    background: var(--panel-bg);
+    color: var(--panel-fg);
     font-family: sans-serif;
     font-size: 11px;
-    -webkit-box-shadow: 2px 2px 2px 0px rgba(143, 144, 145, 1);
-    -moz-box-shadow: 2px 2px 2px 0px rgba(143, 144, 145, 1);
-    box-shadow: 2px 2px 2px 0px rgba(143, 144, 145, 1);
+    -webkit-box-shadow: 2px 2px 2px 0px var(--panel-shadow);
+    -moz-box-shadow: 2px 2px 2px 0px var(--panel-shadow);
+    box-shadow: 2px 2px 2px 0px var(--panel-shadow);
     padding: 0px;
-    border: 1px solid #c6c6c6;
+    border: 1px solid var(--panel-border);
 }
 
 #div_menu a {
     position: relative;
     display: block;
-    color: #555;
+    color: var(--panel-fg);
     text-decoration: none;
     padding: 6px 8px 6px 30px;
     width: 250px;
@@ -83,17 +106,17 @@ svg {
 }
 
 #div_menu a span {
-    color: #bcb1b3;
+    color: var(--panel-span);
     float: right;
 }
 
 #div_menu a:hover {
-    color: #fff;
-    background: #3879d9;
+    color: var(--menu-hover-fg);
+    background: var(--menu-hover-bg);
 }
 
 #div_menu hr {
-    border: 1px solid #ebebeb;
+    border: 1px solid var(--panel-rule);
     border-bottom: 0;
 }
 
@@ -101,10 +124,11 @@ svg {
 #div_binfo {
     visibility: hidden;
     position: fixed;
-    background: #fff;
+    background: var(--panel-bg);
+    color: var(--panel-fg);
     opacity: 0.9;
     padding: 3px;
-    border: 1px solid #c6c6c6;
+    border: 1px solid var(--panel-border);
     touch-action: none;
 }
 
@@ -124,13 +148,13 @@ svg {
     width: 210px;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--panel-bg);
     opacity: 0.95;
-    border: 1px solid #c6c6c6;
-    box-shadow: 2px 2px 2px 0px rgba(143, 144, 145, 1);
+    border: 1px solid var(--panel-border);
+    box-shadow: 2px 2px 2px 0px var(--panel-shadow);
     font-family: sans-serif;
     font-size: 12px;
-    color: #555;
+    color: var(--panel-fg);
 }
 
 #div_factors_head {
@@ -138,7 +162,7 @@ svg {
     align-items: center;
     gap: 3px;
     padding: 4px;
-    border-bottom: 1px solid #ebebeb;
+    border-bottom: 1px solid var(--panel-rule);
 }
 
 #div_factors_title {
@@ -168,7 +192,7 @@ svg {
 }
 
 .factor_row:hover {
-    background: #eef3fb;
+    background: var(--panel-hover);
 }
 
 .factor_row input {
@@ -185,7 +209,7 @@ svg {
 }
 
 .factor_deg {
-    color: #aaa;
+    color: var(--panel-muted);
     font-size: 11px;
     white-space: nowrap;
 }
@@ -198,13 +222,13 @@ svg {
     width: 380px;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--panel-bg);
     opacity: 0.97;
-    border: 1px solid #c6c6c6;
-    box-shadow: 2px 2px 2px 0px rgba(143, 144, 145, 1);
+    border: 1px solid var(--panel-border);
+    box-shadow: 2px 2px 2px 0px var(--panel-shadow);
     font-family: sans-serif;
     font-size: 12px;
-    color: #555;
+    color: var(--panel-fg);
 }
 
 #div_proof_head {
@@ -212,7 +236,7 @@ svg {
     align-items: center;
     gap: 4px;
     padding: 4px 6px;
-    border-bottom: 1px solid #ebebeb;
+    border-bottom: 1px solid var(--panel-rule);
 }
 
 #div_proof_title {
@@ -237,15 +261,15 @@ svg {
 
 .proof_reason {
     font-weight: bold;
-    color: #2c5aa0;
+    color: var(--proof-reason);
 }
 
 .proof_note {
     white-space: pre-wrap;
     font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 11px;
-    background: #f6f7f9;
-    border-left: 3px solid #d7dbe0;
+    background: var(--note-bg);
+    border-left: 3px solid var(--note-border);
     padding: 4px 6px;
     margin: 0 0 6px 0;
 }
@@ -265,6 +289,99 @@ svg {
 }
 
 .proof_caveat {
-    color: #a06a2c;
+    color: var(--proof-caveat);
     font-style: italic;
+}
+
+/************************************************************************
+ *                              dark mode
+ *
+ * Set by main.js as data-theme="dark" on <html> (button in the menubar, the `d`
+ * key, ?theme=dark in the url, remembered in localStorage).
+ *
+ * The rule is a SWAP of black and white; every other colour -- the blue and
+ * grey bullets, the per-page differential colours, the green product dots, the
+ * fuchsia map images, the pink/yellow map separators -- is chart data and is
+ * left exactly as it is. The neutral greys of the panels are inverted with it,
+ * since they are shades of the same black-on-white, and the two panel accents
+ * (the proof heading and its caveat) keep their hue but are lightened enough to
+ * stay legible on a dark panel.
+ *
+ * These are CSS overrides of SVG *presentation attributes*, which CSS always
+ * wins against, and deliberately so: nothing here changes the attributes
+ * themselves, so the Tikz screenshot -- which reads `stroke` off the elements --
+ * keeps exporting the black-on-white chart whatever the screen shows.
+ ***********************************************************************/
+:root[data-theme="dark"] {
+    color-scheme: dark; /* native selects, buttons, scrollbars and the katex text follow */
+
+    --page-bg: #000;
+    --plot-bg: #000;
+    --plot-fg: #fff;
+    --panel-bg: #1c1c1c;
+    --panel-fg: #d0d0d0;
+    --panel-border: #4a4a4a;
+    --panel-rule: #3a3a3a;
+    --panel-hover: #2b3550;
+    --panel-muted: #8c8c8c;
+    --panel-span: #6e6e6e;
+    --panel-shadow: rgba(0, 0, 0, 0.75);
+    --note-bg: #262626;
+    --note-border: #4a4a4a;
+    --proof-reason: #7fa8e8;
+    --proof-caveat: #d3a05e;
+}
+
+/* The three black groups in plot.html, whose bullets and lines inherit the colour. */
+:root[data-theme="dark"] #g_bullets_black {
+    fill: var(--plot-fg);
+}
+
+:root[data-theme="dark"] #g_strtlines_black,
+:root[data-theme="dark"] #g_difflines_black {
+    stroke: var(--plot-fg);
+}
+
+/* Everything main.js colours black on the element itself: the structure lines it writes
+   stroke="black" on, and the open circles / free-Z squares / Z/p^k digits it gives the
+   bullet's own colour to (which is "black" for a non-generator). An attribute selector
+   rather than a class, so it keeps matching when updateVisibility rewrites the attribute
+   as the page changes. #rect_shade, the screenshot dimmer, is caught by the same rule and
+   correctly turns into a light wash over the dark chart. */
+:root[data-theme="dark"] #g_plot [stroke="black"] {
+    stroke: var(--plot-fg);
+}
+
+:root[data-theme="dark"] #g_plot [fill="black"] {
+    fill: var(--plot-fg);
+}
+
+/* The axis margin: the two masking blocks, the two axis rules, and all the text, which is
+   drawn with no fill of its own and so is black by default. */
+:root[data-theme="dark"] #leftBlock,
+:root[data-theme="dark"] #bottomBlock {
+    fill: var(--plot-bg);
+}
+
+:root[data-theme="dark"] .axis_line {
+    stroke: var(--plot-fg);
+}
+
+:root[data-theme="dark"] #g_xaxis text,
+:root[data-theme="dark"] #g_yaxis text,
+:root[data-theme="dark"] #g_labels text,
+:root[data-theme="dark"] #text8733d2c {
+    fill: var(--plot-fg);
+}
+
+#button_theme {
+    /* The glyph is the theme you would switch TO, so it reads as an action. */
+    width: 30px;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* The cofseq chart's column bands (main.js's addRects): the same wash, inverted. */
+:root[data-theme="dark"] .csbg {
+    fill: #222;
 }

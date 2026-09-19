@@ -45,6 +45,73 @@ const CONFIG_DYNAMIC = {
 
 
 /************************************************************************
+ *                               theme
+ *
+ * Dark mode is a black/white swap and nothing more: the chart's own colours --
+ * blue generators, grey classes, the per-page differential palette, the green
+ * product dots -- mean something, so they are identical in both themes. All of
+ * it lives in main.css under `:root[data-theme="dark"]`; this only decides which
+ * theme is on and records the choice.
+ *
+ * Precedence: ?theme=dark|light in the url (so a link can pin a theme, e.g. for
+ * a screen share) > what was chosen here last > the OS setting.
+ *
+ * Note this runs at script load, not from init(): main.js is the last element in
+ * the body, so the attribute is set before the first paint and a dark-mode user
+ * never sees a white flash.
+ ***********************************************************************/
+const THEME_KEY = "ss_plot_theme";
+
+/* localStorage throws rather than returning null in a few configurations -- Safari with
+ * "block all cookies", a file:// page in Chrome with site data disabled -- and the chart
+ * is routinely opened over file://, so neither read nor write may be assumed to work. */
+function theme_stored() {
+    try {
+        return localStorage.getItem(THEME_KEY);
+    } catch (e) {
+        return null;
+    }
+}
+
+function theme_store(theme) {
+    try {
+        localStorage.setItem(THEME_KEY, theme);
+    } catch (e) { /* not remembered; the toggle still works for this page */ }
+}
+
+function apply_theme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const button = document.getElementById("button_theme");
+    if (button !== null) {
+        button.textContent = theme === "dark" ? "☀" : "🌙";
+        button.title = theme === "dark" ? "Light mode (d)" : "Dark mode (d)";
+    }
+}
+
+function current_theme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+
+function on_toggle_theme() {
+    const theme = current_theme() === "dark" ? "light" : "dark";
+    theme_store(theme);
+    apply_theme(theme);
+}
+
+/* Anything that is not exactly "dark" or "light" is ignored rather than written to the
+ * attribute, so a typo in the url falls through to the remembered choice. */
+function theme_valid(theme) {
+    return theme === "dark" || theme === "light" ? theme : null;
+}
+
+apply_theme(
+    theme_valid(URL_PARAMS.get("theme"))
+    || theme_valid(theme_stored())
+    || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+);
+
+
+/************************************************************************
  *                          elements
  ***********************************************************************/
 
@@ -74,7 +141,11 @@ const g_diff_lines = {
     3: document.getElementById("g_difflines_red"),
     4: document.getElementById("g_difflines_green"),
     5: document.getElementById("g_difflines_blue"),
-    6: document.getElementById("g_difflines_orange"),
+    6: document.getElementById("g_difflines_pink"),
+    7: document.getElementById("g_difflines_purple"),
+    8: document.getElementById("g_difflines_teal"),
+    9: document.getElementById("g_difflines_orange"),
+    10: document.getElementById("g_difflines_steele")
 };
 
 /* Differential-proof panel (see show_proof below). */
@@ -678,8 +749,10 @@ function addRects() {
     }
     if (MODE === "cofseq") { // color separators
         const rects = [];
+        /* Class "csbg" so the dark theme can invert these: they are a light-grey wash over the
+         * paper, and left alone they would read as near-white blocks on a black chart. */
         for (let i = 0; i < CONFIG.x_max / 3; i += 2)
-            rects.push(`<rect x="${3 * i - 0.5}" y="-0.5" width="3" height="300" fill="#dddddd"/>`);
+            rects.push(`<rect class="csbg" x="${3 * i - 0.5}" y="-0.5" width="3" height="300" fill="#dddddd"/>`);
         g_plot.insertAdjacentHTML("afterbegin", rects.join("\n"));
     }
 }
@@ -949,6 +1022,9 @@ function on_key_down(event) {
         else if (event.which === 187) { /* = */
             const pivotSvg = new Vector(window.innerWidth / 2, window.innerHeight / 2);
             camera.zoom(pivotSvg, CONFIG.camera_zoom_rate);
+        }
+        else if (event.which === 68) { /* d */
+            on_toggle_theme();
         }
     }
     if ("from" in DATA_JSON && event.shiftKey) {
@@ -1435,7 +1511,7 @@ function loadPlot(data_json) {
                 const width = Math.min(bullet1['r'], bullet2['r']) / 4;
                 const page = Math.min(bullet1['p'], bullet2['p']);
                 const ele_line = `<line class="p dl ${data_json.class}" x1="${trans(bullet1.x)}" y1="${bullet1.y}" x2="${trans(bullet2.x)}" y2="${bullet2.y}" stroke-width="${width}" data-page="${page}"> </line>`;
-                g_diff_lines[diff["r"] <= 6 ? diff["r"] : 6].insertAdjacentHTML("beforeend", ele_line);
+                g_diff_lines[diff["r"] <= 10 ? diff["r"] : 10].insertAdjacentHTML("beforeend", ele_line);
                 /* Its click target: same geometry, several times the width, invisible. Class
                  * "dlhit" rather than "dl" on purpose -- updateVisibility gives it the same page
                  * filtering just below, while the Tikz export, which keys off "dl", skips it and so

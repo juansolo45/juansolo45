@@ -1573,10 +1573,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 112,
    "l": 9983,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 397.0,
    "y": 3.0
@@ -1804,10 +1804,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 133,
    "l": 17,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 396.0,
    "y": 20.0
@@ -1903,10 +1903,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 142,
    "l": 9983,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 435.0,
    "y": 5.0
@@ -2178,10 +2178,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 167,
    "l": 17,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 434.0,
    "y": 22.0
@@ -2321,10 +2321,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 180,
    "l": 9983,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 473.0,
    "y": 7.0
@@ -2596,10 +2596,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 205,
    "l": 17,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 472.0,
    "y": 24.0
@@ -2761,10 +2761,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 220,
    "l": 9983,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 511.0,
    "y": 9.0
@@ -3080,10 +3080,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 249,
    "l": 17,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 510.0,
    "y": 26.0
@@ -3258,7 +3258,7 @@ globalThis.DATA_JSON_V2p5 = {
    "c": "black",
    "d": null,
    "i0": 265,
-   "l": 9993,
+   "l": 9952,
    "p": 1000,
    "r": 0.07999999821186066,
    "x": 550.0,
@@ -3289,10 +3289,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 268,
    "l": 9983,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 549.0,
    "y": 11.0
@@ -3630,10 +3630,10 @@ globalThis.DATA_JSON_V2p5 = {
   {
    "b": [0],
    "c": "black",
-   "d": null,
+   "d": [0],
    "i0": 299,
    "l": 17,
-   "p": 1000,
+   "p": 17,
    "r": 0.07999999821186066,
    "x": 548.0,
    "y": 28.0
@@ -3896,7 +3896,7 @@ globalThis.DATA_JSON_V2p5 = {
    "c": "black",
    "d": null,
    "i0": 323,
-   "l": 9993,
+   "l": 9952,
    "p": 1000,
    "r": 0.07999999821186066,
    "x": 588.0,
@@ -4395,6 +4395,19 @@ globalThis.DATA_JSON_V2p5 = {
    "r": 9
   },
   {
+   "i": 112,
+   "j": [133],
+   "pf": {
+    "code": "N",
+    "dx": "0*2",
+    "exact": true,
+    "note": "V1p5__V2p5",
+    "steps": [],
+    "x": "0*4"
+   },
+   "r": 17
+  },
+  {
    "i": 124,
    "j": [132],
    "pf": {
@@ -4445,6 +4458,19 @@ globalThis.DATA_JSON_V2p5 = {
     "x": "0"
    },
    "r": 9
+  },
+  {
+   "i": 142,
+   "j": [167],
+   "pf": {
+    "code": "XY",
+    "dx": "0*2",
+    "exact": true,
+    "note": "Leibniz rule on d_17(x_{199,1}x_{198,2}v_{0,0,3}) at (397,3) and the factor x_{38,2}.",
+    "steps": [],
+    "x": "0*4"
+   },
+   "r": 17
   },
   {
    "i": 154,
@@ -4512,6 +4538,19 @@ globalThis.DATA_JSON_V2p5 = {
    "r": 9
   },
   {
+   "i": 180,
+   "j": [205],
+   "pf": {
+    "code": "XY",
+    "dx": "0*2",
+    "exact": true,
+    "note": "Leibniz rule on d_17(x_{199,1}x_{198,2}v_{0,0,3}) at (397,3) and the factor x_{38,2}^2.",
+    "steps": [],
+    "x": "0*4"
+   },
+   "r": 17
+  },
+  {
    "i": 192,
    "j": [204],
    "pf": {
@@ -4577,6 +4616,19 @@ globalThis.DATA_JSON_V2p5 = {
    "r": 9
   },
   {
+   "i": 220,
+   "j": [249],
+   "pf": {
+    "code": "XY",
+    "dx": "0*2",
+    "exact": true,
+    "note": "Leibniz rule on d_17(x_{199,1}x_{198,2}v_{0,0,3}) at (397,3) and the factor x_{38,2}^3.",
+    "steps": [],
+    "x": "0*4"
+   },
+   "r": 17
+  },
+  {
    "i": 234,
    "j": [248],
    "pf": {
@@ -4595,7 +4647,7 @@ globalThis.DATA_JSON_V2p5 = {
    "pf": {
     "code": "XY",
     "dx": "0",
-    "exact": false,
+    "exact": true,
     "note": "Leibniz rule on d_9(x_{198,2}) at (198,2) and the factor x_{324,4}v_{0,0,3}.",
     "steps": [],
     "x": "0"
@@ -4681,6 +4733,19 @@ globalThis.DATA_JSON_V2p5 = {
    "r": 9
   },
   {
+   "i": 268,
+   "j": [299],
+   "pf": {
+    "code": "XY",
+    "dx": "0*2",
+    "exact": true,
+    "note": "Leibniz rule on d_17(x_{199,1}x_{198,2}v_{0,0,3}) at (397,3) and the factor x_{38,2}^4.",
+    "steps": [],
+    "x": "0*4"
+   },
+   "r": 17
+  },
+  {
    "i": 282,
    "j": [298],
    "pf": {
@@ -4699,7 +4764,7 @@ globalThis.DATA_JSON_V2p5 = {
    "pf": {
     "code": "XY",
     "dx": "0",
-    "exact": false,
+    "exact": true,
     "note": "Leibniz rule on d_9(x_{198,2}) at (198,2) and the factor x_{38,2}x_{324,4}v_{0,0,3}.",
     "steps": [],
     "x": "0"
@@ -10255,7 +10320,7 @@ globalThis.DATA_JSON_V2p5 = {
    "This differential is present in the saved chart data, but no matching derivation row was found in log.db. The chart data alone does not identify which deduction method established it."
   ]
  },
- "time": "2026-09-17 15:52:07",
+ "time": "2026-09-19 12:36:30",
  "type": "module",
  "v_names": [
   "v_{0,0}",

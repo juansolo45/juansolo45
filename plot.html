@@ -50,6 +50,10 @@
         <g id="g_difflines_red" stroke="red" fill="transparent"></g>
         <g id="g_difflines_deepskyblue" stroke="DeepSkyBlue" fill="transparent"></g>
         <g id="g_difflines_black" stroke="black" fill="transparent"></g>
+        <g id="g_difflines_purple" stroke="#a855f7" fill="transparent"></g>
+        <g id="g_difflines_teal" stroke="#008080" fill="transparent"></g>
+        <g id="g_difflines_pink" stroke="#FF69B4" fill="transparent"></g>
+        <g id="g_difflines_steele" stroke="#B0C4DE" fill="transparent"></g>
           <!-- <circle data-i="168" class="p b cw" cx="30" cy="10" r="0.07999999821186066"> </circle> -->
 
         <!-- Invisible, fat copies of the differential lines: a drawn line is a fraction of a unit
@@ -77,11 +81,13 @@
         <rect id="rect_shade" x="-10000" y="0" width="0" height="0" fill="black" opacity="0.1" />
       </g>
 
-      <!-- The margin for axis labels -->
-      <rect x="0" y="0" width="30" height="100%" fill="white" />
+      <!-- The margin for axis labels. The two blocks mask the chart scrolled underneath them, so
+           they carry the page's background colour and not a literal white; both they and the two
+           axis rules are named so the dark theme in main.css can swap them. -->
+      <rect id="leftBlock" x="0" y="0" width="30" height="100%" fill="white" />
       <rect id="bottomBlock" x="0" y="0" width="100%" height="30" fill="white" />
-      <line x1="30" y1="30" x2="100%" y2="30" stroke-width="2" stroke="black"></line>
-      <line x1="30" y1="30" x2="30" y2="100%" stroke-width="2" stroke="black"></line>
+      <line class="axis_line" x1="30" y1="30" x2="100%" y2="30" stroke-width="2" stroke="black"></line>
+      <line class="axis_line" x1="30" y1="30" x2="30" y2="100%" stroke-width="2" stroke="black"></line>
       <g id="g_xaxis" text-anchor="middle" unselectable="on" onselectstart="return false;" onmousedown="return false;"
         transform="scale(1,-1)"></g>
       <g id="g_yaxis" text-anchor="end" unselectable="on" onselectstart="return false;" onmousedown="return false;"
@@ -119,6 +125,7 @@
       <option>Einf</option>
     </select>
     <button id="button_factors" onclick="on_toggle_factors()" title="Choose which multiplications are drawn as structure lines">Lines…</button>
+    <button id="button_theme" onclick="on_toggle_theme()" title="Dark mode (d)">🌙</button>
     <button id="button_cm" onclick="on_contextmenu(event)">︙</button>
   </div>
 
