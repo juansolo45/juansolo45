@@ -30,6 +30,7 @@ a:hover {
 }
 .header-content {
     background: #fff;
+    border: 1.5px solid rgba(0, 0, 0, 0.825);
     box-sizing: border-box;
     display: block;
     max-width: 100%;
@@ -37,8 +38,11 @@ a:hover {
     padding: 12px 16px;
     text-align: right;
     width: fit-content;
-}
-.header p {
+}.self-photo {
+    border: 1px solid rgba(0, 0, 0, 0.825);
+    border-radius: 4px;
+    height: auto;
+}.header p {
     margin: 2px 0;
 }
 .menu {
