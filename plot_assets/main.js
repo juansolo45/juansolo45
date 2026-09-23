@@ -639,33 +639,78 @@ function show_proof(iDiff, posX, posY) {
  * ("j") and with how ss.json wanted it presented ("l": 1 = drawn as a structure
  * line, 0 = shown only as green dots when you select a class). So moving a
  * multiplier between those two presentations is a pure client-side toggle -- no
- * re-plot, no re-export. FACTORS.on holds the set of factor indices currently
- * drawn as lines; it starts as the first `n_lines_factors` of them, which is
- * exactly ss.json's list [0].
+ * re-plot, no re-export.
  *
- * Lines for a factor are created the first time it is switched on (FACTORS.drawn)
+ * A page can show more than one spectrum -- two in "map" mode (source and
+ * target), three in "cofseq" -- and each of them carries its OWN "degs_factors",
+ * so a factor index j means nothing until you also say whose chart it indexes.
+ * FACTORS therefore keeps one entry per plotted chart, keyed by the chart's svg
+ * class ("cw", "cw1"/"cw2", "cs0".."cs2"), which is also written onto every
+ * structure line as data-cw so visibility can be resolved from the element
+ * alone. Each entry's `on` starts as the first `n_lines_factors` of its
+ * factors, which is exactly that chart's ss.json list [0].
+ *
+ * Lines for a factor are created the first time it is switched on (entry.drawn)
  * and thereafter only hidden/shown, so initial load costs exactly what it did
  * before and a factor you never look at is never built.
  ***********************************************************************/
 const FACTORS = {
-    active: false,   /* only "ss" mode has a single ring whose factors these are */
-    on: new Set(),
-    drawn: new Set(),
+    active: false,   /* false until some chart has registered its multipliers */
+    charts: [],      /* one entry per plotted chart, in the order they load */
+    byKey: {},       /* chart class -> that entry */
 };
 
-function factorIsOn(j) {
-    return !FACTORS.active || FACTORS.on.has(Number(j));
+function factorIsOn(key, j) {
+    if (!FACTORS.active)
+        return true;
+    const chart = FACTORS.byKey[key];
+    /* A chart with no factors of its own (or a line drawn before its chart registered) keeps
+     * whatever the data file chose rather than vanishing. */
+    return chart === undefined || chart.on.has(Number(j));
 }
 
-/* Create the <line> elements for one factor, over the whole chart. Mirrors the
- * structure-line half of loadPlot, but for a single j and in one pass. */
-function drawFactorLines(j) {
-    if (FACTORS.drawn.has(j))
+/* Called for each chart just before it is plotted, so the first pass over its structure lines
+ * already knows which of them to draw. `label` names the spectrum in the panel; it is ignored
+ * when the page shows only one chart. */
+function registerFactorChart(data_json, label) {
+    const degs = data_json["degs_factors"] || [];
+    if (degs.length === 0)
         return;
-    FACTORS.drawn.add(j);
-    const data_json = DATA_JSON;
-    /* Same transform loadPlot applies; the identity in "ss" mode, which is the only mode the
-     * picker runs in, but kept in step with it rather than silently assuming so. */
+    const chart = {
+        key: data_json.class,
+        label: label,
+        data_json: data_json,
+        degs: degs,
+        names: data_json["names_factors"] || [],
+        /* Absent in cofseq charts, which plot every factor they carry as a line. */
+        n_lines: data_json["n_lines_factors"] ?? degs.length,
+        on: new Set(),
+        drawn: new Set(),
+    };
+    FACTORS.active = true;
+    FACTORS.charts.push(chart);
+    FACTORS.byKey[chart.key] = chart;
+    resetFactorChart(chart);
+    /* loadPlot draws exactly these, so they must count as already built -- otherwise switching one
+     * off and back on would ask drawFactorLines to create a second copy of every one of its lines. */
+    chart.drawn = new Set(chart.on);
+}
+
+function resetFactorChart(chart) {
+    chart.on.clear();
+    for (let j = 0; j < chart.n_lines; ++j)
+        chart.on.add(j);
+}
+
+/* Create the <line> elements for one factor of one chart, over the whole chart. Mirrors the
+ * structure-line half of loadPlot, but for a single j and in one pass. */
+function drawFactorLines(chart, j) {
+    if (chart.drawn.has(j))
+        return;
+    chart.drawn.add(j);
+    const data_json = chart.data_json;
+    /* Same transform loadPlot applies -- the identity in "ss" mode, a shift in "map", a shift and
+     * a stretch in "cofseq". */
     const xshift = "shift" in data_json ? data_json.shift : 0;
     const xfactor = "factor" in data_json ? data_json.factor : 1;
     const trans = (x) => ((x - Math.round(x)) + Math.round(x) * xfactor + xshift);
@@ -679,77 +724,90 @@ function drawFactorLines(j) {
                 const bullet2 = data_json["bullets"][i];
                 const width = Math.min(bullet1['r'], bullet2['r']) / 4;
                 const page = Math.min(bullet1['p'], bullet2['p']);
-                html += `<line class="p sl ${data_json.class}" x1="${trans(bullet1.x)}" y1="${bullet1.y}" x2="${trans(bullet2.x)}" y2="${bullet2.y}" stroke="black" stroke-width="${width}" data-page="${page}" data-j="${j}" style="visibility:hidden"> </line>`;
+                html += `<line class="p sl ${data_json.class}" x1="${trans(bullet1.x)}" y1="${bullet1.y}" x2="${trans(bullet2.x)}" y2="${bullet2.y}" stroke="black" stroke-width="${width}" data-page="${page}" data-cw="${data_json.class}" data-j="${j}" style="visibility:hidden"> </line>`;
             }
         }
     }
     g_strtlines.insertAdjacentHTML("beforeend", html);
 }
 
-function setFactor(j, on) {
+function setFactor(chart, j, on) {
     if (on) {
-        drawFactorLines(j);
-        FACTORS.on.add(j);
+        drawFactorLines(chart, j);
+        chart.on.add(j);
     }
     else
-        FACTORS.on.delete(j);
+        chart.on.delete(j);
     updateVisibility();
 }
 
 function on_factor_toggle(event) {
-    setFactor(Number(event.target.dataset.j), event.target.checked);
+    const chart = FACTORS.byKey[event.target.dataset.cw];
+    if (chart === undefined)
+        return;
+    setFactor(chart, Number(event.target.dataset.j), event.target.checked);
     syncFactorChecks();
 }
 
 function on_factors_all(on) {
-    for (let j = 0; j < DATA_JSON["degs_factors"].length; ++j) {
-        if (on)
-            drawFactorLines(j);
-        on ? FACTORS.on.add(j) : FACTORS.on.delete(j);
+    for (const chart of FACTORS.charts) {
+        for (let j = 0; j < chart.degs.length; ++j) {
+            if (on)
+                drawFactorLines(chart, j);
+            on ? chart.on.add(j) : chart.on.delete(j);
+        }
     }
     syncFactorChecks();
     updateVisibility();
 }
 
 function on_factors_reset() {
-    const n = DATA_JSON["n_lines_factors"] ?? 0;
-    FACTORS.on.clear();
-    for (let j = 0; j < n; ++j)
-        FACTORS.on.add(j);
+    for (const chart of FACTORS.charts)
+        resetFactorChart(chart);
     syncFactorChecks();
     updateVisibility();
 }
 
 function syncFactorChecks() {
-    for (const box of div_factors_list.querySelectorAll("input[type=checkbox]"))
-        box.checked = FACTORS.on.has(Number(box.dataset.j));
-    div_factors_title.textContent = `Structure lines ${FACTORS.on.size}/${DATA_JSON["degs_factors"].length}`;
+    for (const box of div_factors_list.querySelectorAll("input[type=checkbox]")) {
+        const chart = FACTORS.byKey[box.dataset.cw];
+        box.checked = chart !== undefined && chart.on.has(Number(box.dataset.j));
+    }
+    let n_on = 0, n_total = 0;
+    for (const chart of FACTORS.charts) {
+        n_on += chart.on.size;
+        n_total += chart.degs.length;
+    }
+    div_factors_title.textContent = `Structure lines ${n_on}/${n_total}`;
 }
 
 /* Render one row per multiplier: a checkbox, the factor's name, and its (stem, s).
  * Names come from the chart's "names_factors"; they are LaTeX-ish, so run them
- * through the same prettifier the bullet labels use. */
+ * through the same prettifier the bullet labels use. When the page shows more than
+ * one spectrum each gets its own headed section, because a factor of one chart says
+ * nothing about the other's lines. */
 function buildFactorPanel() {
-    const degs = DATA_JSON["degs_factors"] || [];
-    const names = DATA_JSON["names_factors"] || [];
-    if (degs.length === 0) {
+    if (FACTORS.charts.length === 0) {
         button_factors.style.display = "none";
         return;
     }
-    FACTORS.active = true;
-    on_factors_reset();
-    /* loadPlot draws exactly these, so they must count as already built -- otherwise switching one
-     * off and back on would ask drawFactorLines to create a second copy of every one of its lines. */
-    FACTORS.drawn = new Set(FACTORS.on);
     let html = "";
-    for (let j = 0; j < degs.length; ++j) {
-        const name = latexToHtmlName(names[j] !== undefined ? names[j] : `x_{${degs[j][0]},${degs[j][1]}}`);
-        html += `<label class="factor_row"><input type="checkbox" data-j="${j}" onchange="on_factor_toggle(event)">` +
-                `<span class="factor_name">${name}</span>` +
-                `<span class="factor_deg">(${degs[j][0]}, ${degs[j][1]})</span></label>`;
+    for (const chart of FACTORS.charts) {
+        if (FACTORS.charts.length > 1)
+            html += `<div class="factor_group">${escapeHtml(chart.label)}</div>`;
+        for (let j = 0; j < chart.degs.length; ++j) {
+            const name = latexToHtmlName(chart.names[j] !== undefined ? chart.names[j] : `x_{${chart.degs[j][0]},${chart.degs[j][1]}}`);
+            html += `<label class="factor_row"><input type="checkbox" data-cw="${chart.key}" data-j="${j}" onchange="on_factor_toggle(event)">` +
+                    `<span class="factor_name">${name}</span>` +
+                    `<span class="factor_deg">(${chart.degs[j][0]}, ${chart.degs[j][1]})</span></label>`;
+        }
     }
     div_factors_list.innerHTML = html;
     syncFactorChecks();
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function on_toggle_factors() {
@@ -1244,7 +1302,7 @@ function take_screenshot() {
                     if (classList.contains("sl")) {
                         /* `factorIsOn` here too, so a screenshot exports the lines you can
                          * actually see rather than whatever ss.json originally chose. */
-                        if (ele.dataset.page >= CONFIG_DYNAMIC.page && factorIsOn(ele.dataset.j)) {
+                        if (ele.dataset.page >= CONFIG_DYNAMIC.page && factorIsOn(ele.dataset.cw, ele.dataset.j)) {
                             let x1 = ele.getAttribute("x1"), y1 = ele.getAttribute("y1"), x2 = ele.getAttribute("x2"), y2 = ele.getAttribute("y2");
                             if (in_screenshot(x1, y1) || in_screenshot(x2, y2)) {
                                 tex_string += `  \\draw (${RoundCoor(x1)},${RoundCoor(y1)}) -- (${RoundCoor(x2)},${RoundCoor(y2)});\n`;
@@ -1348,7 +1406,7 @@ function updateVisibility() {
             if (!classList.contains("cw1") || (Math.round(ele.getAttribute("x1")) >= sep_right && Math.round(ele.getAttribute("x2")) >= sep_right)) {
                 if (!classList.contains("cw2") || (Math.round(ele.getAttribute("x1")) <= sep_left && Math.round(ele.getAttribute("x2")) <= sep_left)) {
                     if (classList.contains("sl")) {
-                        if (ele.dataset.page >= CONFIG_DYNAMIC.page && factorIsOn(ele.dataset.j)) {
+                        if (ele.dataset.page >= CONFIG_DYNAMIC.page && factorIsOn(ele.dataset.cw, ele.dataset.j)) {
                             ele.removeAttribute("style");
                         }
                     }
@@ -1545,8 +1603,8 @@ function loadPlot(data_json) {
                 const width = Math.min(bullet1['r'], bullet2['r']) / 4;
                 const page = Math.min(bullet1['p'], bullet2['p']);
                 /* Born hidden if the picker has already switched this factor off. */
-                const hidden = factorIsOn(line['j']) ? "" : ` style="visibility:hidden"`;
-                const ele_line = `<line class="p sl ${data_json.class}" x1="${trans(bullet1.x)}" y1="${bullet1.y}" x2="${trans(bullet2.x)}" y2="${bullet2.y}" stroke="black" stroke-width="${width}" data-page="${page}" data-j="${line['j']}"${hidden}> </line>`;
+                const hidden = factorIsOn(data_json.class, line['j']) ? "" : ` style="visibility:hidden"`;
+                const ele_line = `<line class="p sl ${data_json.class}" x1="${trans(bullet1.x)}" y1="${bullet1.y}" x2="${trans(bullet2.x)}" y2="${bullet2.y}" stroke="black" stroke-width="${width}" data-page="${page}" data-cw="${data_json.class}" data-j="${line['j']}"${hidden}> </line>`;
                 g_strtlines.insertAdjacentHTML("beforeend", ele_line);
             }
         }
@@ -1709,7 +1767,8 @@ function processParams() {
         addRects();
         if (MODE === "ss") {
             DATA_JSON.class = "cw";
-            buildFactorPanel(); /* sets FACTORS.on, which Plot's first pass reads */
+            registerFactorChart(DATA_JSON, data); /* sets the factor set Plot's first pass reads */
+            buildFactorPanel();
             Plot(DATA_JSON);
 
             /* module */
@@ -1726,12 +1785,16 @@ function processParams() {
                 DATA_JSON["cw1"] = Object.assign({}, globalThis[`DATA_JSON_${DATA_JSON["from"]}`]);
                 DATA_JSON["cw1"].class = "cw1";
                 DATA_JSON["cw1"].shift = 1;
+                registerFactorChart(DATA_JSON["cw1"], DATA_JSON["from"]);
                 Plot(DATA_JSON["cw1"]);
 
                 loadScript(`${dir}/${DATA_JSON["to"]}.js`, () => {
                     DATA_JSON["cw2"] = Object.assign({}, globalThis[`DATA_JSON_${DATA_JSON["to"]}`]);
                     DATA_JSON["cw2"].class = "cw2";
                     DATA_JSON["cw2"].shift = DATA_JSON["sus"];
+                    registerFactorChart(DATA_JSON["cw2"], DATA_JSON["to"]);
+                    /* Both spectra are known only now, and the panel lists them together. */
+                    buildFactorPanel();
                     Plot(DATA_JSON["cw2"]);
                     Plot(DATA_JSON);
 
@@ -1760,6 +1823,7 @@ function processParams() {
                 DATA_JSON["cofseq_groups"][iCw].factor = 3;
                 DATA_JSON["cofseq_groups"][iCw].class = "cs" + iCw;
                 DATA_JSON["cofseq_groups"][iCw]["bullets2"] = DATA_JSON["cofseq_groups"][(iCw + 1) % 3]["bullets"]
+                registerFactorChart(DATA_JSON["cofseq_groups"][iCw], DATA_JSON["names"][iCw]);
                 Plot(DATA_JSON["cofseq_groups"][iCw]);
 
                 loadScript(`${dir}/${DATA_JSON["names"][iCw]}.js`, () => {
@@ -1775,6 +1839,7 @@ function processParams() {
                     }
                 });
             }
+            buildFactorPanel();
         }
     });
 }
