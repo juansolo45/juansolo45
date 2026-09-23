@@ -167,6 +167,7 @@ const p_deg = document.getElementById("p_deg");
 const p_base = document.getElementById("p_base");
 const p_latex = document.getElementById("p_latex");
 const p_diff = document.getElementById("p_diff");
+const p_order = document.getElementById("p_order");
 const g_prod = document.getElementById("g_prod");
 const g_map = document.getElementById("g_map");
 const div_menu_style = document.getElementById("div_menu").style;
@@ -378,6 +379,23 @@ function mon_no_h012(mon, data_json) {
         }
     }
     return true;
+}
+
+/* The order of the group this class carries, for the charts that know it: an exporter
+ * that resolved the extensions writes "free" (a free Z_(p) summand) or "k" (a cyclic
+ * Z/p^k) onto the bullet -- see plotBullets in ss/plot.cpp and the Aubry chart in
+ * scripts/aubry.  Charts that carry neither get no line at all rather than a guess:
+ * for a plain F_p chart a single dot is not the whole group. */
+function orderLabel(bullet_json, data_json) {
+    const prime = data_json["prime"] ?? "p";
+    if (bullet_json["free"] === true) {
+        return `Order: &infin; (free Z<sub>(${prime})</sub>)`;
+    }
+    if (!("k" in bullet_json)) {
+        return "";
+    }
+    const k = bullet_json["k"] | 0;
+    return k > 1 ? `Order: ${prime}<sup>${k}</sup>` : `Order: ${prime}`;
 }
 
 function getJsonForBullet(bullet) {
@@ -937,6 +955,9 @@ function on_pointerup(event) {
                 const bullet_json = getJsonForBullet(bullet)["bullets"][bullet.dataset.i];
 
                 p_deg.innerHTML = `Deg: (${getAxisNumber(Math.round(bullet.getAttribute("cx")))},${Math.round(bullet.getAttribute("cy"))})`;
+                const str_order = orderLabel(bullet_json, getJsonForBullet(bullet));
+                p_order.innerHTML = str_order;
+                p_order.style.display = str_order === "" ? "none" : "";
                 p_base.innerHTML = `Basis: ${bullet_json['b']}`;
                 const str_base = latexBullet(bullet);
                 const tex_base = katex.renderToString(str_base, { throwOnError: false });
