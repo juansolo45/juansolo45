@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<!-- SOURCE OF TRUTH: <repo>/webpages/index.html -- the copy beside the `ss` binary is written by
+     ss's build step and is overwritten on every build.
+
+     charts.html                 the categories `ss plot_ss` has written (categories.js)
+     charts.html?diagram=<dir>   one category: its spectra, maps and cofiber sequences (<dir>/index.js),
+                                each a link into plot.html, with an optional stem window -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title id="title">Charts - Juan C. Moreno</title>
+  <link rel="stylesheet" href="../site.css" />
+  <script>
+    window.MathJax = { tex: { inlineMath: [["$", "$"], ["\\(", "\\)"]] } };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #333333;
+      --muted: #6b6b70;
+      --line: #e3e3e6;
+      --row: #f6f6f8;
+      --link: #0366d6;
+      --warn: #a15c00;
+      --bad: #b3261e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0 auto;
+      max-width: 800px;
+      padding: 40px 20px;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 4px;
+    }
+
+    .header h1 {
+      font-size: 2em;
+      margin: 0 0 5px;
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 28px 0 8px;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .window {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: end;
+      margin: 18px 0 4px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .window label {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+      color: var(--muted);
+      gap: 4px;
+    }
+
+    .window input {
+      width: 110px;
+      padding: 6px 8px;
+      font: inherit;
+      color: var(--fg);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .window button {
+      padding: 6px 12px;
+      font: inherit;
+      color: var(--fg);
+      background: var(--row);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .window .hint {
+      font-size: 12px;
+      color: var(--muted);
+      flex-basis: 100%;
+    }
+
+    .scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    table.charts {
+      table-layout: fixed;
+      min-width: 640px;
+    }
+
+    table.charts col.c-name {
+      width: 22%;
+    }
+
+    table.charts col.c-sp {
+      width: 12%;
+    }
+
+    table.charts col.c-num {
+      width: 14%;
+    }
+
+    table.charts col.c-load {
+      width: 24%;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr:hover td {
+      background: var(--row);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .bad {
+      color: var(--bad);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 8px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="header-content">
+      <h1>Juan C. Moreno</h1>
+      <p>Department of Mathematics</p>
+      <p>University of Notre Dame</p>
+      <p>Office: Hurley 260</p>
+      <p>Email: jmoreno9@nd.edu</p>
+      <p>Pronouns: he/him</p>
+    </div>
+  </div>
+  <nav class="menu" aria-label="Main navigation">
+    <a href="../index.html">About Me</a>
+    <a href="../research.html">Research</a>
+    <a href="../teaching.html">Teaching</a>
+    <a class="active" href="charts.html">Charts</a>
+  </nav>
+  <main id="main"></main>
+  <script>
+    "use strict";
+    const PARAMS = new URLSearchParams(window.location.search);
+    const DIR = PARAMS.get("diagram");
+    const main = document.getElementById("main");
+    const CATEGORY_DESCRIPTIONS = {
+      finite5: "5-primary Adams spectral sequence data",
+      finite5_E2: "5-primary Adams spectral sequence data",
+      finite5_Rav: "5-primary Adams spectral sequence data"
+    };
+
+    /* How many classes a page may load before it gets slow (browsers cope with S0p5's ~27k
+     * comfortably and with ~100k well; a 1.87M-class chart crashes them). */
+    const WARN_CLASSES = 250000, BAD_CLASSES = 600000;
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    function latexObject(name) {
+      const factors = String(name).split("_").map(factor => {
+        const match = /^(S0|V[0-2]|Ca[1-3]|Cb[1-3])(?:r?p5)?$/.exec(factor);
+        if (!match) return null;
+        const symbol = match[1];
+        if (symbol === "S0") return "S^0";
+        if (symbol[0] === "V") return `V(${symbol[1]})`;
+        const greek = symbol[1] === "a" ? "\\alpha" : "\\beta";
+        return `C${greek}_{${symbol.slice(2)}}`;
+      });
+      return factors.some(factor => factor === null) ? null : factors.join(" \\wedge ");
+    }
+    function mathLabel(name) {
+      const pieces = String(name).split("__");
+      const latex = pieces.map(latexObject);
+      return latex.some(piece => piece === null) ? esc(name) : `\\(${latex.join(" \\to ")}\\)`;
+    }
+    function setHTML(element, html) {
+      window.MathJax?.typesetClear?.([element]);
+      element.innerHTML = html;
+      window.MathJax?.typesetPromise?.([element]);
+    }
+    function fmtNum(n) {
+      return Number(n).toLocaleString("en-US");
+    }
+    function loadScript(path, onload, onerror) {
+      const el = document.createElement("script");
+      el.src = path;
+      el.onload = onload;
+      el.onerror = onerror;
+      document.body.appendChild(el);
+    }
+
+    /* ---------------------------------------------------------- the list of categories */
+    function showCategories() {
+      document.getElementById("title").textContent = "Charts";
+      loadScript("categories.js", () => {
+        const cats = (globalThis.CATEGORIES || []).slice().sort((a, b) => a.dir.localeCompare(b.dir));
+        let html = "";
+        if (!cats.length) {
+          html += `<p class="empty">No categories yet.</p>`;
+        }
+        else {
+          const plural = (n, w) => `${fmtNum(n)} ${w}${n === 1 ? "" : "s"}`;
+          const contents = (c) => {
+            if (c.kind === "charts")
+              return plural(c.n_charts || 0, "chart") + (c.dir !== "algnov" && c.dir !== "aubry" && c.groups && c.groups.length ? ` <span class="muted">(${c.groups.map(esc).join(", ")})</span>` : "");
+            const parts = [plural(c.n_spectra || 0, "spectrum").replace("spectrums", "spectra"), plural(c.n_maps || 0, "map")];
+            if (c.n_cofseqs) parts.push(plural(c.n_cofseqs, "cofiber sequence"));
+            return parts.join(", ");
+          };
+          html += `<div class="scroll"><table><thead><tr><th>Directory</th><th>Contents</th><th>Updated</th></tr></thead><tbody>`;
+          for (const c of cats)
+            html += `<tr><td><a href="charts.html?diagram=${encodeURIComponent(c.dir)}">${esc(c.dir)}</a></td><td>${contents(c)}</td><td class="muted">${esc(c.time || "")}</td></tr>`;
+          html += `</tbody></table></div>`;
+        }
+        setHTML(main, html);
+      }, () => {
+        setHTML(main, `<h1>Charts</h1><p class="empty">No <code>categories.js</code> here yet: run <code>./ss plot_ss &lt;category&gt;</code> once with the current <code>ss</code>.</p>`);
+      });
+    }
+
+    /* ---------------------------------------------------------- one category */
+    function readWindow() {
+      const v = (id) => {
+        const s = document.getElementById(id).value.trim();
+        return s === "" || isNaN(Number(s)) ? null : Math.trunc(Number(s));
+      };
+      return { min: v("stem_min"), max: v("stem_max") };
+    }
+    function storeKey() {
+      return `ss_index_window:${DIR}`;
+    }
+    function saveWindow(w) {
+      try { localStorage.setItem(storeKey(), JSON.stringify(w)); } catch (e) { }
+    }
+    function loadSavedWindow() {
+      try { return JSON.parse(localStorage.getItem(storeKey())) || { min: null, max: null }; } catch (e) { return { min: null, max: null }; }
+    }
+
+    /* classes a page loads for spectrum `sp` under window w: every chunk that meets the window
+     * (the viewer loads whole chunks, then drops what lies outside) */
+    function classesLoaded(sp, w) {
+      if (!sp) return 0;
+      if (!sp.chunked) return sp.n_classes;
+      let n = 0;
+      for (const c of sp.chunks)
+        if ((w.max === null || c.stem_min <= w.max) && (w.min === null || c.stem_max >= w.min))
+          n += c.n;
+      return n;
+    }
+    function classesShown(sp, w) {
+      if (!sp) return 0;
+      let n = 0;
+      for (const c of sp.chunks) {
+        if ((w.max !== null && c.stem_min > w.max) || (w.min !== null && c.stem_max < w.min)) continue;
+        const lo = Math.max(c.stem_min, w.min === null ? c.stem_min : w.min);
+        const hi = Math.min(c.stem_max, w.max === null ? c.stem_max : w.max);
+        n += c.n * (hi - lo + 1) / (c.stem_max - c.stem_min + 1); /* chunk sizes are per stem range: an estimate */
+      }
+      return Math.round(n);
+    }
+    function sizeCell(n) {
+      const cls = n > BAD_CLASSES ? "bad" : n > WARN_CLASSES ? "warn" : "";
+      const note = n > BAD_CLASSES ? " &mdash; too large, narrow the window" : n > WARN_CLASSES ? " &mdash; may be slow" : "";
+      return `<td class="num ${cls}">${fmtNum(n)}${note}</td>`;
+    }
+    function plotUrl(name, w) {
+      const q = new URLSearchParams({ diagram: DIR, data: name });
+      if (w.min !== null) q.set("stem_min", w.min);
+      if (w.max !== null) q.set("stem_max", w.max);
+      return `plot.html?${q.toString()}`;
+    }
+
+    function renderCategory(idx) {
+      const w = readWindow();
+      saveWindow(w);
+      const byName = new Map((idx.spectra || []).map(s => [s.name, s]));
+
+      let html = "";
+      if (idx.charts) {
+        /* a directory indexed by scripts/web_index.py: charts grouped by kind */
+        const hiddenAlgnovCharts = new Set(["S0_t408synE2", "S0anss"]);
+        const visibleCharts = DIR === "algnov" ? idx.charts.filter(c => !hiddenAlgnovCharts.has(c.name)) : idx.charts;
+        const groups = new Map();
+        for (const c of visibleCharts) {
+          if (!groups.has(c.group)) groups.set(c.group, []);
+          groups.get(c.group).push(c);
+        }
+        if (!visibleCharts.length) html += `<p class="empty">No charts.</p>`;
+        const groupOrder = DIR === "algnov"
+          ? ["Algebraic Novikov spectral sequence", "Adams–Novikov E₂ (= algebraic Novikov E∞)", "Synthetic Adams–Novikov E₂"]
+          : [...groups.keys()];
+        for (const group of groupOrder) {
+          const list = groups.get(group);
+          if (!list) continue;
+          const heading = group === "Adams–Novikov E₂ (= algebraic Novikov E∞)"
+            ? "Adams–Novikov E₂"
+            : group;
+          html += `<h2>${esc(heading)}</h2>`;
+          html += `<div class="scroll"><table class="charts"><colgroup><col class="c-name"><col class="c-sp"><col class="c-num"><col class="c-num"><col class="c-load"><col></colgroup><thead><tr><th>Chart</th><th>Spectrum</th><th class="num">Stems</th><th class="num">Classes</th><th class="num">Loaded for this window</th><th></th></tr></thead><tbody>`;
+          for (const c of list) {
+            const sp = { n_classes: c.n_classes, chunked: false, chunks: [{ stem_min: c.stem_min, stem_max: c.stem_max, n: c.n_classes }] };
+            html += `<tr><td><a href="${plotUrl(c.name, w)}">${mathLabel(c.name)}</a></td><td>${mathLabel(c.spectrum)}</td><td class="num">${c.stem_min}&ndash;${c.stem_max}</td><td class="num">${fmtNum(c.n_classes)}</td>${sizeCell(classesShown(sp, w))}<td class="muted">${esc(c.note || "")}</td></tr>`;
+          }
+          html += `</tbody></table></div>`;
+        }
+      }
+      if (idx.spectra) {
+      html += `<h2>Spectra</h2>`;
+      if (!idx.spectra.length) html += `<p class="empty">None.</p>`;
+      else {
+        html += `<div class="scroll"><table><thead><tr><th>Spectrum</th><th>Type</th><th class="num">Stems</th><th class="num">Classes</th><th class="num">Loaded for this window</th></tr></thead><tbody>`;
+        for (const sp of idx.spectra) {
+          const type = sp.type === "module" ? `module over ${mathLabel(sp.over)}` : "ring";
+          const chunks = sp.chunked ? ` <span class="muted">(${sp.chunks.length} pieces)</span>` : "";
+          html += `<tr><td><a href="${plotUrl(sp.name, w)}">${mathLabel(sp.name)}</a></td><td>${type}</td><td class="num">${sp.stem_min}&ndash;${sp.stem_max}</td><td class="num">${fmtNum(sp.n_classes)}${chunks}</td>${sizeCell(classesLoaded(sp, w))}</tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+      }
+
+      if (idx.maps.length || !idx.charts) {
+      html += `<h2>Maps</h2>`;
+      if (!idx.maps.length) html += `<p class="empty">None.</p>`;
+      else {
+        html += `<div class="scroll"><table><thead><tr><th>Map</th><th class="num">Loaded for this window</th></tr></thead><tbody>`;
+        for (const m of idx.maps) {
+          const n = classesLoaded(byName.get(m.from), w) + classesLoaded(byName.get(m.to), w);
+          html += `<tr><td><a href="${plotUrl(m.name, w)}">${mathLabel(m.name)}</a></td>${sizeCell(n)}</tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+      }
+
+      if (idx.cofseqs.length || !idx.charts) {
+      html += `<h2>Cofiber sequences</h2>`;
+      if (!idx.cofseqs.length) html += `<p class="empty">None.</p>`;
+      else {
+        html += `<div class="sub" style="margin-bottom:6px">These load their three terms in full; the stem window does not apply.</div>`;
+        html += `<div class="scroll"><table><thead><tr><th>Cofiber sequence</th><th class="num">Loaded</th><th></th></tr></thead><tbody>`;
+        for (const c of idx.cofseqs) {
+          const n = c.terms.reduce((a, t) => a + classesLoaded(byName.get(t), { min: null, max: null }), 0);
+          html += `<tr><td><a href="${plotUrl(c.name, { min: null, max: null })}">${mathLabel(c.name)}</a></td>${sizeCell(n)}<td class="muted" id="cs_${esc(c.name)}"></td></tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+      }
+      setHTML(document.getElementById("lists"), html);
+
+      /* flag the cofiber sequences that have not been plotted */
+      for (const c of idx.cofseqs)
+        loadScript(`${DIR}/${c.name}.js`, () => { }, () => {
+          const el = document.getElementById(`cs_${c.name}`);
+          if (el) el.textContent = "not plotted yet";
+        });
+
+      /* the largest spectrum's estimate, for the hint line */
+      const big = (idx.spectra || []).filter(s => s.chunked);
+      const hint = document.getElementById("hint");
+      if (big.length) {
+        const parts = big.map(s => `${mathLabel(s.name)} ≈ ${fmtNum(classesShown(s, w))} classes in window`);
+        setHTML(hint, `Leave a box empty for no bound. ${parts.join("; ")}.`);
+      }
+      else setHTML(hint, "Leave a box empty for no bound.");
+    }
+
+    function showCategory() {
+      document.getElementById("title").textContent = `${DIR}: charts`;
+      loadScript(`${DIR}/index.js`, () => {
+        const idx = globalThis.CATEGORY_INDEX;
+        const saved = loadSavedWindow();
+        setHTML(main, `
+          <div class="sub"><a href="charts.html">All categories</a></div>
+          <h1>${esc(DIR)}</h1>
+          ${CATEGORY_DESCRIPTIONS[DIR] ? `<div class="sub">${esc(CATEGORY_DESCRIPTIONS[DIR])}</div>` : ""}
+          <div class="sub">${idx.charts ? "Indexed" : "Plotted"} ${esc(idx.time || "")}</div>
+          <div class="window">
+            <label>stem_min<input id="stem_min" type="number" inputmode="numeric" placeholder="no bound" value="${saved.min ?? ""}"></label>
+            <label>stem_max<input id="stem_max" type="number" inputmode="numeric" placeholder="no bound" value="${saved.max ?? ""}"></label>
+            <button id="reset" type="button">Whole chart</button>
+            <div class="hint" id="hint"></div>
+          </div>
+          <div id="lists"></div>`);
+        const update = () => renderCategory(idx);
+        document.getElementById("stem_min").addEventListener("input", update);
+        document.getElementById("stem_max").addEventListener("input", update);
+        document.getElementById("reset").addEventListener("click", () => {
+          document.getElementById("stem_min").value = "";
+          document.getElementById("stem_max").value = "";
+          update();
+        });
+        update();
+      }, () => {
+        setHTML(main, `<div class="sub"><a href="charts.html">All categories</a></div><h1>${esc(DIR)}</h1><p class="empty">No <code>${esc(DIR)}/index.js</code>: run <code>./ss plot_ss &lt;category&gt;</code> with the current <code>ss</code>.</p>`);
+      });
+    }
+
+    if (DIR) showCategory();
+    else showCategories();
+  </script>
+</body>
+
+</html>
