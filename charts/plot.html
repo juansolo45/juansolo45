@@ -42,6 +42,9 @@
         <g id="g_strtlines_purple" stroke="purple" fill="transparent"></g>
         <g id="g_strtlines_darkslategray" stroke="darkslategray" fill="transparent"></g>
         <g id="g_strtlines_black" stroke="black" fill="transparent"></g>
+        <!-- Hidden extensions (extensions.js): dashed, drawn only on the E_infinity page. No class
+             "p", so updateVisibility leaves them to extensions.js. -->
+        <g id="g_extlines" fill="transparent" style="display:none"></g>
 
         <g id="g_difflines" fill="transparent"></g>
         <g id="g_difflines_orange" stroke="orange" fill="transparent"></g>
@@ -60,10 +63,26 @@
              wide and practically unclickable, so these carry the pointer target for "show me the
              proof of this differential". Deliberately placed before the bullet groups below, so
              clicking a class still selects the class. -->
-        <g id="g_diffhits" stroke="transparent" fill="none" pointer-events="stroke"></g>
+        <!-- visibleStroke, not stroke: a hit line hidden by the page filter (visibility: hidden) must not catch clicks -->
+        <g id="g_diffhits" stroke="transparent" fill="none" pointer-events="visibleStroke"></g>
+
+        <!-- Curves s = f(n) from the Graph panel (graph.js). No class "p": updateVisibility hides
+             every ".p" it does not know. Below the bullets, so classes stay clickable. -->
+        <g id="g_graphs" fill="none" pointer-events="none"></g>
 
         <g id="g_prod" fill="green"></g>
         <g id="g_map" fill="Fuchsia"></g>
+        <!-- The Products panel's rings around the bullets a result refers to (products.js). No
+             class "p": updateVisibility hides every ".p" it does not know. -->
+        <g id="g_products_hl" fill="none"></g>
+        <!-- Shift-click highlights (main.js, toggleHighlight). Not ".p" either, and never a click
+             target, so a second shift-click reaches the object underneath. -->
+        <g id="g_highlights" fill="none" stroke="#ffe600" pointer-events="none"></g>
+        <!-- Towers of a multiplier through chosen classes (main.js, TOWERS). Lines carry class "p tl",
+             so updateVisibility shows them by page like structure lines. -->
+        <g id="g_towers" fill="none" pointer-events="none"></g>
+        <!-- A ring around the selected class: the red dot alone is hard to find, worst in dark mode. -->
+        <circle id="circle_selected" cx="-1000" cy="-1000" r="0" fill="none" pointer-events="none"></circle>
         <circle id="circle_mouseon" cx="-1000" cy="-1000" r="0" fill="grey"></circle>
         <g id="g_bullets_black" fill="black"></g>
         <g id="g_bullets_blue" fill="blue"></g>
@@ -101,6 +120,7 @@
     <p id="p_order"></p>
     <p id="p_base">Basis:</p>
     <p id="p_diff"></p>
+    <p id="p_known"></p>
   </div>
 
   <div id="div_menubar">
@@ -109,7 +129,7 @@
       <option>dash d2</option>
       <option>dash d3</option>
       <option>dash d4</option>
-      <option selected="selected">dash d5</option>
+      <option>dash d5</option>
       <option>dash d6</option>
       <option>dash d7</option>
       <option>dash d8</option>
@@ -125,7 +145,27 @@
       <option>dash d18</option>
       <option>dash d19</option>
       <option>dash d20</option>
-      <option>dash all</option>
+      <option>dash d21</option>
+      <option>dash d22</option>
+      <option>dash d23</option>
+      <option>dash d24</option>
+      <option>dash d25</option>
+      <option>dash d26</option>
+      <option>dash d27</option>
+      <option>dash d28</option>
+      <option>dash d29</option>
+      <option>dash d30</option>
+      <option>dash d31</option>
+      <option>dash d32</option>
+      <option>dash d33</option>
+      <option>dash d34</option>
+      <option>dash d35</option>
+      <option>dash d36</option>
+      <option>dash d37</option>
+      <option>dash d38</option>
+      <option>dash d39</option>
+      <option>dash d40</option>
+      <option selected="selected">dash all</option>
     </select>
     <select id="select_lines" onchange="on_select_lines(event)">
       <option>All diff</option>
@@ -151,16 +191,42 @@
       <option>E18</option>
       <option>E19</option>
       <option>E20</option>
+      <option>E21</option>
+      <option>E22</option>
+      <option>E23</option>
+      <option>E24</option>
+      <option>E25</option>
+      <option>E26</option>
+      <option>E27</option>
+      <option>E28</option>
+      <option>E29</option>
+      <option>E30</option>
+      <option>E31</option>
+      <option>E32</option>
+      <option>E33</option>
+      <option>E34</option>
+      <option>E35</option>
+      <option>E36</option>
+      <option>E37</option>
+      <option>E38</option>
+      <option>E39</option>
+      <option>E40</option>
       <option>Einf</option>
     </select>
-    <button id="button_factors" onclick="on_toggle_factors()" title="Choose which multiplications are drawn as structure lines">Lines…</button>
+    <button id="button_factors" onclick="on_toggle_factors()" title="Choose which multiplications are drawn as structure lines">Lines</button>
+    <button id="button_exts" onclick="on_toggle_exts()" title="Hidden extensions on the E-infinity page">Extensions</button>
+    <button id="button_products" onclick="on_toggle_products()" title="Compute products and check relations on the E_r page">Products</button>
+    <button id="button_graph" onclick="on_toggle_graph()" title="Plot curves s = f(n) over the chart">Graph</button>
+    <button id="button_hl_clear" onclick="on_highlights_clear()" title="Remove every shift-click highlight" style="display:none">Clear ◯</button>
     <button id="button_theme" onclick="on_toggle_theme()" title="Dark mode (d)">🌙</button>
     <button id="button_cm" onclick="on_contextmenu(event)">︙</button>
   </div>
 
-  <!-- Which multipliers are drawn as structure lines. Populated at load from the chart's
-       "degs_factors"/"names_factors"; every multiplier's products are already in the data file,
-       so toggling one is instant and needs no re-export. -->
+  <!-- Which multipliers are drawn as structure lines. Populated at load from each plotted
+       chart's "degs_factors"/"names_factors" -- one headed section per spectrum, so a map's
+       source and target (and a cofiber sequence's three charts) are toggled independently.
+       Every multiplier's products are already in the data file, so toggling one is instant
+       and needs no re-export. -->
   <div id="div_factors">
     <div id="div_factors_head">
       <span id="div_factors_title">Structure lines</span>
@@ -169,7 +235,61 @@
       <button onclick="on_factors_reset()" title="Back to the multipliers ss.json chose">reset</button>
       <button onclick="on_toggle_factors()" title="Close">&times;</button>
     </div>
+    <!-- Towers: pick a multiplier's "tower" toggle below, then click classes. -->
+    <div id="div_factors_tools">
+      <span id="tower_status" class="factor_deg">Tower: off</span>
+      <button onclick="on_towers_clear()" title="Remove every tower drawn">clear towers</button>
+    </div>
     <div id="div_factors_list"></div>
+  </div>
+
+  <!-- Hidden extensions by the spectrum's self-maps (p, alpha_1, v_1, ...), read by `ss plot_ss`
+       from the category's cofiber sequences ("exts"); dashed lines on the E_infinity page. -->
+  <div id="div_exts">
+    <div id="div_exts_head">
+      <span id="div_exts_title">Hidden extensions</span>
+      <button onclick="on_exts_all(true)" title="Show every multiplier">all</button>
+      <button onclick="on_exts_all(false)" title="Show none">none</button>
+      <button onclick="on_toggle_exts()" title="Close">&times;</button>
+    </div>
+    <div id="div_exts_note" class="prod_muted"></div>
+    <div id="div_exts_list"></div>
+  </div>
+
+  <!-- Products, relations and Massey products on the E_r page, computed in the browser
+       (plot_assets/products.js, alg.js, massey.js) from the chart's exact vectors, its ".alg.js"
+       sidecar and, for E_2 Massey products, its ".massey.js" sidecar. -->
+  <div id="div_products">
+    <div id="div_products_head">
+      <span id="div_products_title">Products</span>
+      <label title="Which page the answers are written on">page
+        <select id="products_page" onchange="on_products_page(event)"></select>
+      </label>
+      <label title="Follow the chart's page selector"><input id="products_follow" type="checkbox" checked onchange="on_products_follow(event)">follow</label>
+      <button onclick="on_toggle_products()" title="Close">&times;</button>
+    </div>
+    <div id="div_products_query">
+      <input id="products_input" type="text" spellcheck="false" autocomplete="off"
+        placeholder="x_{7,1}*x_{39,1}   x_{7,1}^2 = 0   <x_{7,1},x_{7,1},x_{39,1}>" onkeydown="on_products_key(event)">
+      <button onclick="on_products_compute()" title="Compute (Enter)">=</button>
+      <button id="products_pick" onclick="on_products_pick()" title="Then click a bullet to insert its [stem,s,k] token">pick</button>
+      <button id="products_find" onclick="on_products_find()" title="Then click a bullet: which Massey products contain it on this page?">&#10216;&#10217;&#8715;</button>
+      <button onclick="on_products_clear()" title="Clear the results">clear</button>
+    </div>
+    <div id="products_status" class="prod_muted"></div>
+    <div id="products_results"></div>
+  </div>
+
+  <!-- Curves s = f(n) drawn over the chart (plot_assets/graph.js). -->
+  <div id="div_graph">
+    <div id="div_graph_head">
+      <span id="div_graph_title">Graph</span>
+      <button onclick="on_graph_add()" title="Add a curve">+ add</button>
+      <button onclick="on_graph_clear()" title="Remove every curve">clear</button>
+      <button onclick="on_toggle_graph()" title="Close">&times;</button>
+    </div>
+    <div id="div_graph_note" class="prod_muted">n is the stem; p is the prime, q = 2(p-1). Enter to plot. Example: s = n/q + 1</div>
+    <div id="div_graph_list"></div>
   </div>
 
   <!-- Why a differential holds, read out of the deduction log (log.db) at plot time. -->
@@ -196,6 +316,11 @@
     </a>
   </div>
   <script src="plot_assets/main.js"></script>
+  <script src="plot_assets/alg.js"></script>
+  <script src="plot_assets/massey.js"></script>
+  <script src="plot_assets/products.js"></script>
+  <script src="plot_assets/extensions.js"></script>
+  <script src="plot_assets/graph.js"></script>
 </body>
 
 </html>
