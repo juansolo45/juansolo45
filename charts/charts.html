@@ -406,7 +406,7 @@
       html += `<h2>Cofiber sequences</h2>`;
       if (!idx.cofseqs.length) html += `<p class="empty">None.</p>`;
       else {
-        html += `<div class="sub" style="margin-bottom:6px">These load their three terms in full; the stem window does not apply.</div>`;
+        html += `<div class="sub" style="margin-bottom:6px">The stem window does not apply to these.</div>`;
         html += `<div class="scroll"><table><thead><tr><th>Cofiber sequence</th><th class="num">Loaded</th><th></th></tr></thead><tbody>`;
         for (const c of idx.cofseqs) {
           const n = c.terms.reduce((a, t) => a + classesLoaded(byName.get(t), { min: null, max: null }), 0);
@@ -418,11 +418,14 @@
       setHTML(document.getElementById("lists"), html);
 
       /* flag the cofiber sequences that have not been plotted */
-      for (const c of idx.cofseqs)
-        loadScript(`${DIR}/${c.name}.js`, () => { }, () => {
-          const el = document.getElementById(`cs_${c.name}`);
-          if (el) el.textContent = "not plotted yet";
-        });
+      /* A HEAD request, not the file itself: the files run to megabytes each, tens of them per
+       * category. Opened from disk (file:), where fetch is refused, nothing is flagged. */
+      if (location.protocol.startsWith("http"))
+        for (const c of idx.cofseqs)
+          fetch(`${DIR}/${c.name}.js`, { method: "HEAD" }).then(r => {
+            const el = document.getElementById(`cs_${c.name}`);
+            if (el && !r.ok) el.textContent = "not plotted yet";
+          }).catch(() => { });
 
       /* the largest spectrum's estimate, for the hint line */
       const big = (idx.spectra || []).filter(s => s.chunked);

@@ -208,6 +208,7 @@ const p_latex = document.getElementById("p_latex");
 const p_diff = document.getElementById("p_diff");
 const p_order = document.getElementById("p_order");
 const p_known = document.getElementById("p_known");
+const p_nw = document.getElementById("p_nw");   /* Novikov weight, from the "nw" field written by scripts/algnov_xfer/annotate_novikov_weight.py */
 const g_prod = document.getElementById("g_prod");
 const g_highlights = document.getElementById("g_highlights");
 const g_towers = document.getElementById("g_towers");
@@ -304,8 +305,7 @@ const camera = {
             clip(origin_sp1.y, y_min, y_max)
         );
 
-        camera.setTransform();
-        updateAxisLabels();
+        camera.requestRender();
     },
     translate: function (deltaSvg /* Vector */) {
         origin_sp1 = this.o_svg.add(deltaSvg);
@@ -319,8 +319,7 @@ const camera = {
             clip(origin_sp1.y, y_min, y_max)
         );
 
-        camera.setTransform();
-        updateAxisLabels();
+        camera.requestRender();
     },
     world2svg: function (ptWorld /* Vector */) {
         return this.o_svg.add(ptWorld.mul(this.unit_svg));
@@ -342,13 +341,28 @@ const camera = {
     setTransform: function () {
         g_plot.setAttribute("transform", `translate(${this.o_svg.x},${this.o_svg.y}) scale(${this.unit_svg})`);
     },
+    /* Pointer and wheel events can arrive several times per frame; the camera state above updates at
+     * once, but the svg is redrawn at most once per frame. */
+    renderPending: false,
+    requestRender: function () {
+        if (this.renderPending)
+            return;
+        this.renderPending = true;
+        window.requestAnimationFrame(() => {
+            this.renderPending = false;
+            this.setTransform();
+            updateAxisLabels();
+            updateGrid();
+        });
+    },
 };
 
 camera.setTransform();
 
 function getAxisNumber(x) {
     if (MODE === "map") {
-        if (x < DATA_JSON.sep_right)
+        /* "cw2" arrives after the map file: the axis can be drawn in between */
+        if (x < DATA_JSON.sep_right && DATA_JSON["cw2"])
             return x - DATA_JSON["cw2"].shift;
         else
             return x - 1;
@@ -677,6 +691,27 @@ function show_proof(iDiff, posX, posY) {
     const b1 = DATA_JSON["bullets"][diff["i"]];
     const b2 = DATA_JSON["bullets"][diff["j"][0]];
     div_proof_title.innerHTML = `d<sub>${diff["r"]}</sub> : (${Math.round(b1.x)}, ${Math.round(b1.y)}) &rarr; (${Math.round(b2.x)}, ${Math.round(b2.y)})`;
+
+    /* A chart post-processed by slim_charts.js keeps its proofs in a sidecar ("proofs"), each diff
+     * pointing into it by "pfi": fetch it on the first click, then attach every "pf". */
+    if (diff["pf"] === undefined && diff["pfi"] !== undefined && DATA_JSON["proofs"]) {
+        const variable = `PROOFS_JSON_${DATA_NAME}`;
+        if (!globalThis[variable]) {
+            div_proof_body.innerHTML = `<p class="proof_caveat">Loading the proofs&hellip;</p>`;
+            div_proof.style.left = `${posX + 12}px`;
+            div_proof.style.top = `${posY + 12}px`;
+            div_proof.style.visibility = "visible";
+            const dir = URL_PARAMS.get("diagram") || "mix";
+            loadScript(`${dir}/${DATA_JSON["proofs"]}`, () => {
+                if (globalThis[variable] && div_proof.style.visibility === "visible")
+                    show_proof(iDiff, posX, posY);
+            }, () => { div_proof_body.innerHTML = `<p>Could not load ${escapeHtml(DATA_JSON["proofs"])}.</p>`; });
+            return;
+        }
+        for (const d of DATA_JSON["diffs"])
+            if (d["pfi"] !== undefined)
+                d["pf"] = globalThis[variable][d["pfi"]];
+    }
 
     const pf = diff["pf"];
     let html = "";
@@ -1389,6 +1424,18 @@ function on_pointerup(event) {
                 const str_order = orderLabel(bullet_json, getJsonForBullet(bullet));
                 p_order.innerHTML = str_order;
                 p_order.style.display = str_order === "" ? "none" : "";
+                /* Novikov weight (the number of exterior generators in the Milnor basis; Andrews' t,
+                 * Miller's Cartan degree): "nw" is an integer for a weight-homogeneous class, a list for a
+                 * mixed one, and absent on charts that were not annotated. */
+                const nw = bullet_json['nw'];
+                if (nw === undefined || nw === null) {
+                    p_nw.innerHTML = "";
+                    p_nw.style.display = "none";
+                }
+                else {
+                    p_nw.innerHTML = `Novikov weight: ${Array.isArray(nw) ? nw.join(", ") : nw}`;
+                    p_nw.style.display = "";
+                }
                 p_base.innerHTML = `Basis: ${bullet_json['b']}`;
                 const str_base = latexBullet(bullet);
                 const tex_base = katex.renderToString(str_base, { throwOnError: false });
@@ -2129,9 +2176,12 @@ function waitUntil(checkFlag, doSomething) {
         doSomething();
     }
 }
-function loadScript(path, on_load) {
+/* `on_error` (optional) runs if the file cannot be loaded, e.g. a ".meta.js" sidecar a chart exported
+ * before 2026-10-16 does not have. */
+function loadScript(path, on_load, on_error) {
     if (LOADED_SCRIPTS.has(path)) {
-        waitUntil(() => { return LOADED_SCRIPTS.has(path + "_done") }, on_load);
+        waitUntil(() => { return LOADED_SCRIPTS.has(path + "_done") || LOADED_SCRIPTS.has(path + "_failed") },
+            () => { if (LOADED_SCRIPTS.has(path + "_done")) on_load(); else if (on_error) on_error(); });
     }
     else {
         LOADED_SCRIPTS.add(path);
@@ -2139,6 +2189,7 @@ function loadScript(path, on_load) {
         scriptEle.setAttribute("src", path);
         document.body.appendChild(scriptEle);
         scriptEle.addEventListener("load", () => { on_load(); LOADED_SCRIPTS.add(path + "_done"); });
+        scriptEle.addEventListener("error", () => { LOADED_SCRIPTS.add(path + "_failed"); if (on_error) on_error(); });
     }
 }
 
@@ -2241,6 +2292,16 @@ function assembleChart(meta, parts, useWindow) {
  * opts.window: apply the URL's stem window. Calls back with the chart object. */
 const ASSEMBLED = new Map();
 function loadChart(dir, name, opts, on_load) {
+    /* Only the small fields: the ".meta.js" sidecar (gen_names, gen_degs, v_names, over, alg, ...) is a
+     * few KB, the chart tens of MB. Falls back to the chart when there is no sidecar. */
+    if (opts.meta && !globalThis[`DATA_JSON_${name}`]) {
+        const meta = () => globalThis[`META_JSON_${name}`];
+        if (meta())
+            on_load(meta());
+        else
+            loadScript(`${dir}/${name}.meta.js`, () => on_load(meta()), () => loadScript(`${dir}/${name}.js`, () => on_load(globalThis[`DATA_JSON_${name}`])));
+        return;
+    }
     loadScript(`${dir}/${name}.js`, () => {
         const raw = globalThis[`DATA_JSON_${name}`];
         const useWindow = opts.window && HAS_STEM_WINDOW;
@@ -2459,6 +2520,10 @@ function processParams() {
                 registerFactorChart(DATA_JSON["cofseq_groups"][iCw], DATA_JSON["names"][iCw]);
                 Plot(DATA_JSON["cofseq_groups"][iCw]);
 
+                /* A file post-processed by slim_charts.js carries the basis entries its bullets use (keyed
+                 * by global id) and the generator names: nothing more to load. */
+                if ("basis" in DATA_JSON["cofseq_groups"][iCw])
+                    continue;
                 /* the whole term, unwindowed: the cofiber-sequence file indexes its basis by global id */
                 loadChart(dir, DATA_JSON["names"][iCw], { window: false }, (data_json_csi) => {
                     DATA_JSON["cofseq_groups"][iCw]["basis"] = data_json_csi["basis"];
@@ -2480,17 +2545,30 @@ function processParams() {
 /***************************************************
  *                   initialization
  ***************************************************/
-function addGridLines() {
-    const g_grid = document.getElementById("g_grid");
-    /* Built as one string and inserted once: there are O(x_max) lines, and `insertAdjacentHTML`
-     * re-parses its target on every call, so inserting them one at a time is what makes a wide
-     * chart slow to open. */
+/* The grid covers only the view plus a screen's worth on every side, and is rebuilt only when the
+ * view leaves that or zooms in well past it: the whole grid is x_max + y_max_grid lines (36k on a
+ * cofseq chart), and every one of them is redrawn on every pan. */
+const GRID_BUILT = { x0: 0, x1: -1, y0: 0, y1: -1 };
+function updateGrid() {
+    const lo = camera.svg2world(new Vector(CONFIG.margin, CONFIG.margin));
+    const hi = camera.svg2world(new Vector(window.innerWidth, window.innerHeight));
+    const w = hi.x - lo.x, h = hi.y - lo.y;
+    const b = GRID_BUILT;
+    const inside = lo.x >= b.x0 && hi.x <= b.x1 && lo.y >= b.y0 && hi.y <= b.y1;
+    if (inside && (b.x1 - b.x0) <= 5 * w + 2 && (b.y1 - b.y0) <= 5 * h + 2)
+        return;
+    b.x0 = Math.max(0, Math.floor(lo.x - w));
+    b.x1 = Math.min(CONFIG.x_max, Math.ceil(hi.x + w));
+    b.y0 = Math.max(0, Math.floor(lo.y - h));
+    b.y1 = Math.min(CONFIG.y_max_grid, Math.ceil(hi.y + h));
+    const xl = b.x0 === 0 ? -0.5 : b.x0, xr = b.x1 === CONFIG.x_max ? CONFIG.x_max + 0.5 : b.x1;
+    const yb = b.y0 === 0 ? -0.5 : b.y0;
     const lines = [];
-    for (let i = 0; i <= CONFIG.y_max_grid; i += 1)
-        lines.push(`<line x1="-0.5" y1="${i}" x2="${CONFIG.x_max + 0.5}" y2="${i}"></line>`);
-    for (let i = 0; i <= CONFIG.x_max; i += 1)
-        lines.push(`<line x1="${i}" y1="-.5" x2="${i}" y2="${CONFIG.y_max_grid}"></line>`);
-    g_grid.insertAdjacentHTML("beforeend", lines.join("\n"));
+    for (let i = b.y0; i <= b.y1; i += 1)
+        lines.push(`<line x1="${xl}" y1="${i}" x2="${xr}" y2="${i}"></line>`);
+    for (let i = b.x0; i <= b.x1; i += 1)
+        lines.push(`<line x1="${i}" y1="${yb}" x2="${i}" y2="${b.y1}"></line>`);
+    document.getElementById("g_grid").innerHTML = lines.join("\n");
 }
 
 function init() {
@@ -2500,7 +2578,7 @@ function init() {
         CONFIG_DYNAMIC.page = select_page_map["E0"];
     }
 
-    addGridLines();
+    updateGrid();
     /* ss mode adds the ?graph= curves once its chart (and so its prime) has loaded */
     if (MODE !== "ss" && typeof initGraph === "function")
         initGraph();
