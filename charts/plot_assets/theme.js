@@ -4,9 +4,11 @@
 /************************************************************************
  *                               theme
  *
- * Shared by plot.html (main.js) and plot3d.html (plot3d.js); loaded as a plain script right
- * before them, so the functions are globals and the data-theme attribute is set before the
- * first paint (a dark-mode user never sees a white flash).
+ * plot3d.html's copy of the theme block of main.js (same localStorage key, so the two viewers
+ * share the choice); loaded as a plain script before plot3d.js, so the functions are globals and
+ * the data-theme attribute is set before the first paint.  plot.html must NOT load this file:
+ * main.js declares the same names (a duplicate `const` is a SyntaxError), and loading an extra
+ * script before main.js made the chart's requestAnimationFrame drawing unreliable (2026-10-17).
  *
  * Dark mode is a black/white swap and nothing more: the chart's own colours --
  * blue generators, grey classes, the per-page differential palette, the green
@@ -17,8 +19,6 @@
  * Precedence: ?theme=dark|light in the url (so a link can pin a theme, e.g. for
  * a screen share) > what was chosen here last > the OS setting.
  ***********************************************************************/
-"use strict";
-
 const THEME_URL_PARAMS = new URLSearchParams(window.location.search);
 const THEME_KEY = "ss_plot_theme";
 
@@ -46,8 +46,6 @@ function apply_theme(theme) {
         button.textContent = theme === "dark" ? "☀" : "🌙";
         button.title = theme === "dark" ? "Light mode (d)" : "Dark mode (d)";
     }
-    /* plot3d.js recolours its WebGL scene on this; the svg viewer needs nothing, css does it */
-    document.dispatchEvent(new CustomEvent("ss-theme", { detail: theme }));
 }
 
 function current_theme() {
@@ -58,6 +56,8 @@ function on_toggle_theme() {
     const theme = current_theme() === "dark" ? "light" : "dark";
     theme_store(theme);
     apply_theme(theme);
+    /* plot3d.js recolours its WebGL scene on this; the svg viewer needs nothing, css does it */
+    document.dispatchEvent(new CustomEvent("ss-theme", { detail: theme }));
 }
 
 /* Anything that is not exactly "dark" or "light" is ignored rather than written to the
