@@ -61,55 +61,9 @@ const CONFIG_DYNAMIC = {
  * the body, so the attribute is set before the first paint and a dark-mode user
  * never sees a white flash.
  ***********************************************************************/
-const THEME_KEY = "ss_plot_theme";
-
-/* localStorage throws rather than returning null in a few configurations -- Safari with
- * "block all cookies", a file:// page in Chrome with site data disabled -- and the chart
- * is routinely opened over file://, so neither read nor write may be assumed to work. */
-function theme_stored() {
-    try {
-        return localStorage.getItem(THEME_KEY);
-    } catch (e) {
-        return null;
-    }
-}
-
-function theme_store(theme) {
-    try {
-        localStorage.setItem(THEME_KEY, theme);
-    } catch (e) { /* not remembered; the toggle still works for this page */ }
-}
-
-function apply_theme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    const button = document.getElementById("button_theme");
-    if (button !== null) {
-        button.textContent = theme === "dark" ? "☀" : "🌙";
-        button.title = theme === "dark" ? "Light mode (d)" : "Dark mode (d)";
-    }
-}
-
-function current_theme() {
-    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-}
-
-function on_toggle_theme() {
-    const theme = current_theme() === "dark" ? "light" : "dark";
-    theme_store(theme);
-    apply_theme(theme);
-}
-
-/* Anything that is not exactly "dark" or "light" is ignored rather than written to the
- * attribute, so a typo in the url falls through to the remembered choice. */
-function theme_valid(theme) {
-    return theme === "dark" || theme === "light" ? theme : null;
-}
-
-apply_theme(
-    theme_valid(URL_PARAMS.get("theme"))
-    || theme_valid(theme_stored())
-    || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-);
+/* The code lives in plot_assets/theme.js (shared with plot3d.html), which plot.html loads
+ * right before this file: THEME_KEY, theme_stored, theme_store, apply_theme, current_theme,
+ * on_toggle_theme, theme_valid, and the load-time apply_theme(...) call. */
 
 
 /************************************************************************
@@ -2520,8 +2474,8 @@ function processParams() {
                 registerFactorChart(DATA_JSON["cofseq_groups"][iCw], DATA_JSON["names"][iCw]);
                 Plot(DATA_JSON["cofseq_groups"][iCw]);
 
-                /* A file post-processed by slim_charts.js carries the basis entries its bullets use (keyed
-                 * by global id) and the generator names: nothing more to load. */
+                /* `ss plot_cofseq` writes the basis entries its bullets use (keyed by global id) and the
+                 * generator names into the group: nothing more to load. Older files lack them. */
                 if ("basis" in DATA_JSON["cofseq_groups"][iCw])
                     continue;
                 /* the whole term, unwindowed: the cofiber-sequence file indexes its basis by global id */

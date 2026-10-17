@@ -340,6 +340,13 @@
       if (w.max !== null) q.set("stem_max", w.max);
       return `plot.html?${q.toString()}`;
     }
+    /* the 3D (n, s, f) view of a synthetic chart (plot3d.html), same window */
+    function plot3dUrl(name, w) {
+      const q = new URLSearchParams({ diagram: DIR, data: name });
+      if (w.min !== null) q.set("stem_min", w.min);
+      if (w.max !== null) q.set("stem_max", w.max);
+      return `plot3d.html?${q.toString()}`;
+    }
 
     function renderCategory(idx) {
       const w = readWindow();
@@ -370,7 +377,7 @@
           html += `<div class="scroll"><table class="charts"><colgroup><col class="c-name"><col class="c-sp"><col class="c-num"><col class="c-num"><col class="c-load"><col></colgroup><thead><tr><th>Chart</th><th>Spectrum</th><th class="num">Stems</th><th class="num">Classes</th><th class="num">Loaded for this window</th><th></th></tr></thead><tbody>`;
           for (const c of list) {
             const sp = { n_classes: c.n_classes, chunked: false, chunks: [{ stem_min: c.stem_min, stem_max: c.stem_max, n: c.n_classes }] };
-            html += `<tr><td><a href="${plotUrl(c.name, w)}">${mathLabel(c.name)}</a></td><td>${mathLabel(c.spectrum)}</td><td class="num">${c.stem_min}&ndash;${c.stem_max}</td><td class="num">${fmtNum(c.n_classes)}</td>${sizeCell(classesShown(sp, w))}<td class="muted">${esc(c.note || "")}</td></tr>`;
+            html += `<tr><td><a href="${plotUrl(c.name, w)}">${mathLabel(c.name)}</a>${c.three_d ? ` &nbsp;<a href="${plot3dUrl(c.three_d, w)}" title="3D view: stem, Adams filtration, Adams-Novikov filtration">3D</a>` : ""}</td><td>${mathLabel(c.spectrum)}</td><td class="num">${c.stem_min}&ndash;${c.stem_max}</td><td class="num">${fmtNum(c.n_classes)}</td>${sizeCell(classesShown(sp, w))}<td class="muted">${esc(c.note || "")}</td></tr>`;
           }
           html += `</tbody></table></div>`;
         }

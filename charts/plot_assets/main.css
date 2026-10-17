@@ -29,6 +29,8 @@
     --sel-ring: #d40000;    /* ring around the selected class */
     --prod-hl: green;       /* the selected class's products (g_prod) and their bidegree squares */
     --tower: #c2255c;       /* tower lines (main.js, TOWERS) */
+    --line-a0: #d40000;     /* plot3d.html: a_0-multiplication */
+    --line-lam: #1f5fbf;    /* plot3d.html: lambda-multiplication */
 }
 
 body {
@@ -426,6 +428,8 @@ svg {
     --sel-ring: #ff5252;
     --prod-hl: #4dff88;
     --tower: #ff7eb6;
+    --line-a0: #ff5252;
+    --line-lam: #7fb0ff;
 }
 
 /* The selected class and its products: red and dark green vanish on black. */

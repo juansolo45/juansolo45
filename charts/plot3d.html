@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!-- SOURCE OF TRUTH: <repo>/webpages/plot3d.html -- the copy beside the `ss` binary is written at
+     build time (ss/CMakeLists.txt) and is overwritten on every build.
+
+     The F_p-synthetic Adams-Novikov E_2-page of algnov5 in three dimensions: x = stem n,
+     y = F_p-Adams filtration s (= Adams-Novikov filtration + weight), z = Adams-Novikov filtration f.
+     Data: <diagram>/<name>syn3d.js, written by algnov5/stage2/synthetic.py (write_chart3d). -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
+    integrity="sha384-Xi8rHCmBmhbuyyhbI88391ZKP2dmfnOl4rT9ZfRI7mLTdk1wblIUnrIq35nqwEvC" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"
+    integrity="sha384-X/XCfMm41VSsqRNQgDerQczD69XqmjOOOwYQvr/uuC+j4OPoNhVgjdGFwhvN02Ja"
+    crossorigin="anonymous"></script>
+  <title id="title">synthetic E2 (3D)</title>
+  <link rel="stylesheet" href="plot_assets/main.css">
+  <style>
+    html, body { margin: 0; overflow: hidden; }
+    #canvas3d { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+    #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+    #labels > div { position: absolute; top: 0; left: 0; pointer-events: none; }
+    .tick { font: 12px sans-serif; color: var(--plot-fg); white-space: nowrap; }
+    .axname { font: italic 15px serif; color: var(--plot-fg); }
+    #div_menubar { height: auto; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; max-width: 95vw; }
+    #div_menubar button.on { outline: 2px solid var(--menu-hover-bg); }
+    #div_menubar input { width: 4.5em; }
+    #div_menubar label { color: var(--panel-fg); font-size: 13px; }
+    #status { color: var(--panel-muted); font-size: 12px; margin-left: 6px; }
+    #div_binfo { max-width: 60vw; }
+    #div_binfo p { margin: 3px 4px; }
+    #div_legend { position: fixed; left: 10px; bottom: 10px; background: var(--panel-bg); color: var(--panel-fg);
+                  border: 1px solid var(--panel-border); opacity: 0.9; padding: 4px 8px; font-size: 13px; }
+    #div_legend span { display: inline-block; margin-right: 10px; }
+    #div_legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 4px; }
+    #div_legend b { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 4px; position: relative; }
+    #div_legend b::after { content: ""; position: absolute; right: -2px; top: -5px; border: 4px solid transparent; border-left-color: currentColor; }
+    #div_help { position: fixed; right: 10px; bottom: 10px; color: var(--panel-muted); font-size: 12px; }
+  </style>
+  <!-- three.js as ES modules from the same CDN KaTeX comes from, pinned; the addons (OrbitControls,
+       CSS2DRenderer) are only served by jsdelivr, so no cdnjs.  Import maps carry no integrity hash. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <canvas id="canvas3d"></canvas>
+  <div id="labels"></div>
+
+  <div id="div_binfo">
+    <p id="p_latex"></p>
+    <p id="p_deg"></p>
+    <p id="p_mod"></p>
+  </div>
+
+  <div id="div_menubar">
+    <button id="button_reset" title="Reset the view (r)">Reset</button>
+    <button id="button_adams" title="Look from the front: stem and Adams filtration (a)">Adams</button>
+    <button id="button_an" title="Look from above: stem and Adams&ndash;Novikov filtration (n)">Adams&ndash;Novikov</button>
+    <button id="button_a0" class="on" title="a_0-multiplication lines (1)">a<sub>0</sub></button>
+    <button id="button_lam" class="on" title="lambda-multiplication lines (2)">&lambda;</button>
+    <button id="button_arrows" class="on" title="lambda-towers and truncated a_0-towers (3)">arrows</button>
+    <button id="button_grid" class="on" title="Grid and axes (g)">grid</button>
+    <label>stems <input id="stem_min" type="number" placeholder="min"> &ndash; <input id="stem_max" type="number" placeholder="max"></label>
+    <button id="button_2d" title="The 2D chart of the same page">2D</button>
+    <button id="button_theme" onclick="on_toggle_theme()" title="Dark mode (d)">🌙</button>
+    <span id="status"></span>
+  </div>
+
+  <div id="div_legend">
+    <span><i style="color: var(--line-a0)"></i>a<sub>0</sub> (s + 1)</span>
+    <span><i style="color: var(--line-lam)"></i>&lambda; (s &minus; 1)</span>
+    <span><b style="color: var(--line-lam)"></b>&lambda;-tower (not drawn)</span>
+    <span><b style="color: var(--line-a0)"></b>a<sub>0</sub>-tower beyond W<sub>max</sub></span>
+  </div>
+  <div id="div_help">drag: orbit &middot; right-drag or arrow keys: pan &middot; wheel or shift+&uarr;/&darr;: in and out &middot; click a dot: name and module</div>
+
+  <script src="plot_assets/theme.js"></script>
+  <script src="plot_assets/plot3d.js"></script>
+  <!-- inline module (works over file://, a local module *file* would not): fetch three.js from the
+       CDN and start the page -->
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+    plot3d_main({ THREE, OrbitControls, CSS2DRenderer, CSS2DObject });
+  </script>
+</body>
+
+</html>

@@ -8,21 +8,11 @@ globalThis.CATEGORY_INDEX = {
    "short": "synthetic E₂",
    "order": 1,
    "spectrum": "S0",
-   "n_classes": 3194,
+   "n_classes": 877,
    "stem_min": 0,
-   "stem_max": 703,
-   "note": "Wmax 92"
-  },
-  {
-   "name": "S0_t408synE2",
-   "group": "Synthetic Adams–Novikov E₂",
-   "short": "synthetic E₂",
-   "order": 1,
-   "spectrum": "S0_t408",
-   "n_classes": 365,
-   "stem_min": 0,
-   "stem_max": 407,
-   "note": "Wmax 51"
+   "stem_max": 511,
+   "note": "Wmax 70",
+   "three_d": "S0syn3d"
   },
   {
    "name": "V0synE2",
@@ -33,7 +23,8 @@ globalThis.CATEGORY_INDEX = {
    "n_classes": 14504,
    "stem_min": 0,
    "stem_max": 1063,
-   "note": "Wmax 128"
+   "note": "Wmax 128",
+   "three_d": "V0syn3d"
   },
   {
    "name": "V1synE2",
@@ -44,7 +35,8 @@ globalThis.CATEGORY_INDEX = {
    "n_classes": 20338,
    "stem_min": 0,
    "stem_max": 1591,
-   "note": "Wmax 40"
+   "note": "Wmax 40",
+   "three_d": "V1syn3d"
   },
   {
    "name": "V2synE2",
@@ -55,7 +47,8 @@ globalThis.CATEGORY_INDEX = {
    "n_classes": 2373,
    "stem_min": 0,
    "stem_max": 1198,
-   "note": "Wmax 5"
+   "note": "Wmax 5",
+   "three_d": "V2syn3d"
   },
   {
    "name": "S0algNov",
@@ -136,20 +129,10 @@ globalThis.CATEGORY_INDEX = {
    "n_classes": 2373,
    "stem_min": 0,
    "stem_max": 1198
-  },
-  {
-   "name": "S0anss",
-   "group": "Adams–Novikov E₂ (ss category)",
-   "short": "ANSS E₂",
-   "order": 5,
-   "spectrum": "S0",
-   "n_classes": 100,
-   "stem_min": 0,
-   "stem_max": 319
   }
  ],
  "maps": [],
  "cofseqs": [],
- "time": "2026-10-06 15:29:44",
+ "time": "2026-10-17 13:40:05",
  "generated_by": "scripts/web_index.py"
 };
